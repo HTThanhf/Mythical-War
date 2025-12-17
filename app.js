@@ -14,6 +14,8 @@ import {
   updateDoc,
   arrayUnion
 } from "./firebase.js";
+import { openDeckSelect } from "./gameplay.js";
+
 
 // ==== SỬA PHẦN NÀY ====
 
@@ -136,4 +138,6 @@ async function joinRoom(roomId) {
     players: arrayUnion(auth.currentUser.uid)
   });
   alert("Đã vào phòng!");
+  openDeckSelect(roomId); // 👈 gọi gameplay UI
+
 }
