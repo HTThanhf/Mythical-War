@@ -52,14 +52,29 @@ registerBtn.addEventListener("click", async () => {
 });
 
 // Đăng nhập
-loginBtn.addEventListener("click", async () => {
-  try {
-    await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-    alert("Đăng nhập thành công!");
-  } catch (err) {
-    alert("Lỗi: " + err.message);
+logoutBtn.addEventListener("click", async () => {
+  // Xóa user khỏi phòng nếu đang ở trong
+  if (auth.currentUser) {
+    const roomsSnap = await getDocs(collection(db, "rooms"));
+    for (const docSnap of roomsSnap.docs) {
+      const data = docSnap.data();
+      if (data.players?.some(p => p.uid === auth.currentUser.uid || p === auth.currentUser.uid)) {
+        const newPlayers = data.players.filter(p => (p.uid || p) !== auth.currentUser.uid);
+
+        if (newPlayers.length === 0) {
+          // Không còn ai -> xóa luôn phòng
+          await updateDoc(doc(db, "rooms", docSnap.id), { players: [], status: "closed" });
+        } else {
+          await updateDoc(doc(db, "rooms", docSnap.id), { players: newPlayers });
+        }
+      }
+    }
   }
+
+  await signOut(auth);
+  alert("Đã đăng xuất!");
 });
+
 
 // Đăng xuất
 logoutBtn.addEventListener("click", async () => {
@@ -135,8 +150,9 @@ async function joinRoom(roomId) {
   if (players.length >= 4) return alert("Phòng đã đầy!");
 
   await updateDoc(roomRef, {
-    players: arrayUnion(auth.currentUser.uid)
+    players: arrayUnion({ uid: auth.currentUser.uid })
   });
+
   alert("Đã vào phòng!");
   openDeckSelect(roomId); // 👈 gọi gameplay UI
 
