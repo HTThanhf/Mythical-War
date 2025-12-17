@@ -51,36 +51,47 @@ registerBtn.addEventListener("click", async () => {
   }
 });
 
-// Đăng nhập
-logoutBtn.addEventListener("click", async () => {
-  // Xóa user khỏi phòng nếu đang ở trong
-  if (auth.currentUser) {
-    const roomsSnap = await getDocs(collection(db, "rooms"));
-    for (const docSnap of roomsSnap.docs) {
-      const data = docSnap.data();
-      if (data.players?.some(p => p.uid === auth.currentUser.uid || p === auth.currentUser.uid)) {
-        const newPlayers = data.players.filter(p => (p.uid || p) !== auth.currentUser.uid);
+// Đăng xuất
 
-        if (newPlayers.length === 0) {
-          // Không còn ai -> xóa luôn phòng
-          await updateDoc(doc(db, "rooms", docSnap.id), { players: [], status: "closed" });
-        } else {
-          await updateDoc(doc(db, "rooms", docSnap.id), { players: newPlayers });
-        }
+logoutBtn.addEventListener("click", async () => {
+  await removePlayerFromRooms(); // Xóa khỏi phòng trước khi out
+  await signOut(auth);
+  alert("Đã đăng xuất!");
+});
+const deleteAccBtn = document.getElementById("delete-account-btn");
+
+deleteAccBtn.addEventListener("click", async () => {
+  if (!confirm("Bạn chắc chắn muốn xóa tài khoản?")) return;
+
+  await removePlayerFromRooms(); // Rời tất cả phòng
+  try {
+    await auth.currentUser.delete();
+    alert("Tài khoản đã được xóa!");
+    location.reload();
+  } catch (err) {
+    alert("Lỗi khi xóa tài khoản: " + err.message);
+  }
+});
+
+// Xóa player khỏi mọi phòng hiện tại
+async function removePlayerFromRooms() {
+  if (!auth.currentUser) return;
+  const roomsSnap = await getDocs(collection(db, "rooms"));
+  for (const docSnap of roomsSnap.docs) {
+    const data = docSnap.data();
+    if (data.players?.some(p => p.uid === auth.currentUser.uid || p === auth.currentUser.uid)) {
+      const newPlayers = data.players.filter(p => (p.uid || p) !== auth.currentUser.uid);
+
+      if (newPlayers.length === 0) {
+        await updateDoc(doc(db, "rooms", docSnap.id), { players: [], status: "closed" });
+      } else {
+        await updateDoc(doc(db, "rooms", docSnap.id), { players: newPlayers });
       }
     }
   }
-
-  await signOut(auth);
-  alert("Đã đăng xuất!");
-});
+}
 
 
-// Đăng xuất
-logoutBtn.addEventListener("click", async () => {
-  await signOut(auth);
-  alert("Đã đăng xuất!");
-});
 
 // Sidebar navigation
 document.querySelectorAll(".sidebar li").forEach((li) => {
@@ -157,3 +168,9 @@ async function joinRoom(roomId) {
   openDeckSelect(roomId); // 👈 gọi gameplay UI
 
 }
+
+// Khi đóng tab hoặc reload => auto out phòng
+window.addEventListener("beforeunload", async () => {
+  await removePlayerFromRooms();
+});
+

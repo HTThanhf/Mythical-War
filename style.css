@@ -145,7 +145,6 @@ body {
   gap: 10px;
   margin-top: 20px;
 }
-
 .deck {
   padding: 15px;
   background: #1e90ff;
@@ -156,15 +155,14 @@ body {
   font-weight: bold;
   transition: 0.2s;
 }
-
 .deck:hover {
   background: #0077b6;
 }
-
 .deck.taken {
   background: #555;
   cursor: not-allowed;
 }
+
 
 #players-list {
   display: flex;
@@ -215,4 +213,18 @@ body {
 #turn-banner { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:#1e90ff; color:white; padding:10px 20px; border-radius:10px; }
 
 .player-card.target { border:2px solid #ff0; }
+
+.danger-btn {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+.danger-btn:hover {
+  background: #cc0000;
+}
 
