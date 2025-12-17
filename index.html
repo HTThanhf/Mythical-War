@@ -1,42 +1,54 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Dungeon Mayhem Game</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="auth-container">
     <h1>Đăng Nhập / Đăng Ký</h1>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Mật khẩu">
-    <button id="register-btn">Đăng Ký</button>
-    <button id="login-btn">Đăng Nhập</button>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Mật khẩu" />
+    <div class="auth-buttons">
+      <button id="register-btn">Đăng Ký</button>
+      <button id="login-btn">Đăng Nhập</button>
+    </div>
   </div>
 
-  <div id="game-container" style="display:none;">
+  <div id="game-container" style="display: none;">
     <div class="sidebar">
+      <h2>Menu</h2>
       <ul>
-        <li data-section="lobby">Lobby</li>
+        <li data-section="lobby" class="active">Lobby</li>
         <li data-section="player">Player</li>
         <li data-section="friends">Friends</li>
         <li data-section="setting">Setting</li>
       </ul>
-      <button id="logout-btn" style="display:none; margin: 10px;">Đăng Xuất</button>  <!-- Di chuyển vào đây -->
+      <button id="logout-btn">Đăng Xuất</button>
     </div>
+
     <div class="main-content">
       <div id="lobby" class="section active">
         <h2>Lobby</h2>
-        <button id="create-room">Tạo Phòng</button>
-        <button id="quick-join">Vào Nhanh</button>
+        <div class="lobby-actions">
+          <button id="create-room">Tạo Phòng</button>
+          <button id="quick-join">Vào Nhanh</button>
+        </div>
         <ul id="room-list"></ul>
       </div>
-      <div id="player" class="section">Player Info (làm sau)</div>
-      <div id="friends" class="section">Friends (làm sau)</div>
-      <div id="setting" class="section">Setting (làm sau)</div>
+      <div id="player" class="section">Thông tin nhân vật (làm sau)</div>
+      <div id="friends" class="section">Bạn bè (làm sau)</div>
+      <div id="setting" class="section">Cài đặt (làm sau)</div>
     </div>
   </div>
 
+  <!-- Firebase SDK -->
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+
+  <script type="module" src="firebase.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
