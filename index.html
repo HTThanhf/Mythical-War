@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Dungeon Mayhem Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="auth-container">
+    <h1>Đăng Nhập / Đăng Ký</h1>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Mật khẩu">
+    <button id="register-btn">Đăng Ký</button>
+    <button id="login-btn">Đăng Nhập</button>
+    <button id="logout-btn" style="display:none;">Đăng Xuất</button>
+  </div>
+
+  <div id="game-container" style="display:none;">
+    <div class="sidebar">
+      <ul>
+        <li data-section="lobby">Lobby</li>
+        <li data-section="player">Player</li>
+        <li data-section="friends">Friends</li>
+        <li data-section="setting">Setting</li>
+      </ul>
+    </div>
+    <div class="main-content">
+      <div id="lobby" class="section active">
+        <h2>Lobby</h2>
+        <button id="create-room">Tạo Phòng</button>
+        <button id="quick-join">Vào Nhanh</button>
+        <ul id="room-list"></ul>
+      </div>
+      <div id="player" class="section">Player Info (làm sau)</div>
+      <div id="friends" class="section">Friends (làm sau)</div>
+      <div id="setting" class="section">Setting (làm sau)</div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
