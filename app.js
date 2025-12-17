@@ -1,4 +1,4 @@
-import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, collection, addDoc, getDocs, onSnapshot } from './firebase.js';
+import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, collection, addDoc, getDocs, onSnapshot, doc, getDoc, updateDoc, arrayUnion } from './firebase.js';
 
 const authContainer = document.getElementById('auth-container');
 const gameContainer = document.getElementById('game-container');
@@ -13,7 +13,7 @@ auth.onAuthStateChanged(user => {
   if (user) {
     authContainer.style.display = 'none';
     gameContainer.style.display = 'flex';
-    logoutBtn.style.display = 'block';
+    logoutBtn.style.display = 'block';  // Giờ sẽ show vì logout-btn đã move
     loadLobby(); // Load lobby sau login
   } else {
     authContainer.style.display = 'block';
@@ -108,8 +108,6 @@ async function joinRoom(roomId) {
     }
   }
 }
-
-// Import thêm từ firebase.js: import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 function shuffleDeck(deck) {
   return deck.sort(() => Math.random() - 0.5);
