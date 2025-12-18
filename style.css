@@ -487,6 +487,7 @@ body {
   padding: 20px;
   position: relative;
   overflow: hidden;
+  padding-bottom: 30px;
   background-size: cover;
 }
 
@@ -681,24 +682,40 @@ body {
   color: white;
 }
 
-/* Battle main layout */
+/* ==== CHỈNH SỬA LAYOUT BATTLE MỚI ==== */
+
+/* Battle main layout mới: 2 cột với card info ở bên phải */
 .battle-main {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: 2fr 1fr; /* Cột trái lớn hơn, cột phải cho thông tin */
+  grid-template-rows: auto 1fr auto; /* 3 hàng */
   gap: 20px;
-  min-height: calc(100vh - 180px);
+  min-height: calc(100vh - 220px);
   position: relative;
   z-index: 2;
 }
 
-/* Left column */
+
+/* Cột trái - chiếm 2/3 */
 .battle-left {
+  grid-column: 1;
+  grid-row: 1 / span 3; /* Chiếm cả 3 hàng */
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* Players panel */
+/* Cột phải - chiếm 1/3 cho thông tin chi tiết */
+.battle-right {
+  grid-column: 2;
+  grid-row: 1 / span 3; /* Chiếm cả 3 hàng */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 400px; /* Giới hạn chiều rộng */
+}
+
+/* ==== PLAYERS PANEL - Hàng 1, Cột trái ==== */
 .players-panel {
   background: linear-gradient(135deg, rgba(42, 28, 70, 0.8), rgba(31, 20, 56, 0.9));
   border-radius: 15px;
@@ -706,6 +723,8 @@ body {
   border: 2px solid rgba(255, 215, 0, 0.3);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
+  height: 280px; /* Chiều cao cố định */
+  overflow-y: auto;
 }
 
 .panel-title {
@@ -881,15 +900,20 @@ body {
   opacity: 0.8;
 }
 
-/* Board panel */
+/* ==== BOARD PANEL - Hàng 2, Cột trái ==== */
 .board-panel {
   background: linear-gradient(135deg, rgba(31, 20, 56, 0.7), rgba(15, 8, 28, 0.8));
   border-radius: 15px;
   padding: 20px;
   border: 2px solid rgba(147, 112, 219, 0.3);
-  flex: 1;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
+  flex: 1;
+  min-height: 250px;
+  max-height: 350px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .board-header {
@@ -931,8 +955,8 @@ body {
   position: absolute;
   width: 70px;
   height: 100px;
-  left: calc(15px + (var(--stack-index) % 6) * 10px);
-  top: calc(15px + (var(--stack-index) % 4) * 5px);
+  left: calc(20px + (var(--stack-index) % 6) * 15px); /* Tăng khoảng cách */
+  top: calc(20px + (var(--stack-index) % 4) * 8px); /* Tăng khoảng cách */
   transform: rotate(calc((var(--stack-index) % 7) - 3deg));
   z-index: var(--stack-index);
   cursor: pointer;
@@ -947,7 +971,7 @@ body {
 .board-card-inner {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 10px;
   border: 2px solid rgba(255, 215, 0, 0.5);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
   display: flex;
@@ -1044,35 +1068,30 @@ body {
   margin-top: 3px;
 }
 
-/* Right column */
-.battle-right {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Hand panel */
+/* ==== HAND PANEL - Hàng 3, Cột trái (xuống dưới board) ==== */
 .hand-panel {
   background: linear-gradient(135deg, rgba(31, 20, 56, 0.8), rgba(15, 8, 28, 0.9));
   border-radius: 15px;
-  padding: 20px;
+  padding: 15px 20px;
   border: 2px solid rgba(50, 205, 50, 0.3);
-  flex: 1;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
+  height: 380px; /* Tăng chiều cao */
+  display: flex;
+  flex-direction: column;
 }
 
 .hand-title {
   color: var(--ancient-green);
   margin-bottom: 20px;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   border-bottom: 2px solid rgba(50, 205, 50, 0.3);
   padding-bottom: 10px;
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 5px;
 }
 
 .hand-count {
@@ -1082,16 +1101,22 @@ body {
   font-size: 0.9rem;
 }
 
+/* Hand cards container - chiếm phần lớn không gian */
 .hand-cards {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 3px;
   flex-wrap: wrap;
-  min-height: 200px;
-  padding: 15px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   border: 1px dashed rgba(50, 205, 50, 0.2);
+  flex: 1;
+  min-height: 160px; /* Giảm từ 180px */
+  max-height: 200px; /* Giảm từ 220px */
+  padding: 10px; /* Giảm padding */
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: flex-start;
 }
 
 /* Battle card */
@@ -1232,12 +1257,216 @@ body {
   border-color: rgba(50, 205, 50, 0.5);
 }
 
+/* ==== CARD INFO PANEL - Cột phải (vị trí mới cho thông tin chi tiết) ==== */
+.card-info-panel {
+  background: linear-gradient(135deg, rgba(42, 28, 70, 0.9), rgba(31, 20, 56, 0.95));
+  border-radius: 15px;
+  padding: 25px;
+  border: 3px solid var(--gold-primary);
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+  backdrop-filter: blur(10px);
+  height: 380px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.card-info-panel h3 {
+  color: var(--gold-primary);
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  border-bottom: 2px solid var(--gold-secondary);
+  padding-bottom: 10px;
+}
+
+/* Card info content */
+.card-info-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* No card selected state */
+.no-card-selected {
+  text-align: center;
+  color: var(--gold-secondary);
+  padding: 40px 20px;
+  font-style: italic;
+  font-size: 1.1rem;
+}
+
+.no-card-selected .placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+/* Card preview */
+.card-preview {
+  background: linear-gradient(135deg, var(--card-bg), rgba(31, 20, 56, 0.8));
+  border-radius: 10px;
+  padding: 20px;
+  border: 2px solid var(--gold-secondary);
+  text-align: center;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+}
+
+.card-preview-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--gold-primary), var(--ancient-purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.card-preview-name {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--ivory);
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.card-preview-type {
+  font-size: 1rem;
+  color: var(--gold-secondary);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 5px 15px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* Card stats */
+.card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.card-stat {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.card-stat-label {
+  color: var(--gold-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.card-stat-value {
+  color: var(--ivory);
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.mana-stat { color: var(--ancient-blue); }
+.power-stat { color: var(--ancient-red); }
+.target-stat { color: var(--ancient-green); }
+.effect-stat { color: var(--ancient-purple); }
+
+/* Card description */
+.card-description {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 4px solid var(--gold-primary);
+  margin-top: 10px;
+}
+
+.card-description h4 {
+  color: var(--gold-secondary);
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.card-description p {
+  color: var(--ivory);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+/* Card effects list */
+.card-effects {
+  margin-top: 15px;
+}
+
+.card-effects h4 {
+  color: var(--gold-secondary);
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.effects-list {
+  list-style: none;
+  padding-left: 5px;
+}
+
+.effects-list li {
+  color: var(--ivory);
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+  font-size: 0.9rem;
+}
+
+.effects-list li:before {
+  content: "✨";
+  position: absolute;
+  left: 0;
+  color: var(--gold-primary);
+}
+
+/* Special JOL info */
+.jol-special-info {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(139, 195, 74, 0.1));
+  border: 2px solid rgba(76, 175, 80, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.jol-special-info h4 {
+  color: #4CAF50;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jol-special-info p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 /* Hand controls */
 .hand-controls {
-  text-align: center;
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 2px solid rgba(50, 205, 50, 0.2);
+  margin-top: 15px;
+  padding-top: 15px;
+  position: relative;
+  z-index: 20;
+  background: linear-gradient(to bottom, transparent, rgba(15, 8, 28, 0.7));
+  border-radius: 0 0 10px 10px;
+  margin-bottom: 0;
 }
 
 .selected-info {
@@ -1292,16 +1521,18 @@ body {
   min-width: 140px;
 }
 
-/* Battle log */
+/* ==== BATTLE LOG - Di chuyển xuống dưới trong cột phải ==== */
 .battle-log {
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(20, 10, 40, 0.7));
   border-radius: 15px;
   padding: 20px;
   border: 2px solid rgba(255, 215, 0, 0.2);
-  height: 200px;
-  overflow-y: auto;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
+  height: 280px; 
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .log-title {
@@ -1314,6 +1545,8 @@ body {
 }
 
 .log-messages {
+  flex: 1;
+  overflow-y: auto;
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
   line-height: 1.5;
@@ -1361,9 +1594,211 @@ body {
   font-size: 0.8rem;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
+/* ==== CẬP NHẬT HAND CARDS STACKING ==== */
+.hand-cards.stacked {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 10px;
+  min-height: 200px;
+  max-height: 240px;
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.battle-card.stacked {
+  position: relative;
+  width: 90px; /* Tăng kích thước card */
+  height: 130px;
+  margin-left: -75px; /* Tăng khoảng cách chồng */
+  transition: all 0.3s ease;
+  z-index: 1;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 
+    0 6px 12px rgba(0, 0, 0, 0.4),
+    -3px 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.battle-card.stacked:first-child {
+  margin-left: 0;
+}
+
+.battle-card.stacked:hover {
+  margin-left: -35px;
+  margin-right: 35px;
+  transform: translateY(-20px) scale(1.15);
+  z-index: 100;
+  border-color: var(--gold-primary);
+  box-shadow: 
+    0 15px 30px rgba(255, 215, 0, 0.4),
+    -8px 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.battle-card.stacked.selected {
+  transform: translateY(-10px) scale(1.0);
+  border-color: var(--ancient-green);
+  box-shadow: 
+    0 20px 40px rgba(50, 205, 50, 0.7),
+    -10px 0 20px rgba(0, 0, 0, 0.5);
+  z-index: 101;
+}
+
+.battle-card.stacked.insufficient-mana {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+}
+
+/* Card content cho stacked cards - tăng kích thước */
+.battle-card.stacked .card-top {
+  height: 55px;
+  font-size: 2.0rem;
+}
+
+.battle-card.stacked .card-content {
+  padding: 7px;
+}
+
+.battle-card.stacked .card-name-battle {
+  font-size: 0.85rem;
+  height: 32px;
+  line-height: 1.2;
+}
+
+.battle-card.stacked .card-type-battle {
+  font-size: 0.75rem;
+}
+
+.battle-card.stacked .card-cost {
+  font-size: 0.9rem;
+  padding: 3px 10px;
+}
+
+.battle-card.stacked .card-power {
+  font-size: 0.9rem;
+  padding: 3px 12px;
+}
+
+/* Card counter cho stacked cards */
+.card-counter {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--ancient-red);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border: 2px solid var(--ivory);
+  z-index: 10;
+}
+
+/* Warning cho nhiều bài */
+.hand-warning {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--ancient-red), #8B0000);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  z-index: 100;
+  box-shadow: 0 4px 10px rgba(205, 92, 92, 0.5);
+  animation: pulseWarning 1.5s infinite;
+  white-space: nowrap;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+}
+
+/* Hand controls cho stacked layout */
+.hand-controls.stacked {
+  margin-top: 40px;
+}
+
+/* Tooltip cho stacked cards */
+.battle-card.stacked .card-tooltip {
+  position: absolute;
+  bottom: 140%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.95);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--gold-primary);
+  z-index: 1000;
+  pointer-events: none;
+  min-width: 180px;
+  font-size: 0.85rem;
+  white-space: normal;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.battle-card.stacked:hover .card-tooltip {
+  opacity: 1;
+}
+
+/* Card count display */
+.hand-count-warning {
+  color: var(--ancient-red);
+  font-weight: bold;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Card pile effect */
+.card-pile {
+  position: relative;
+  width: 90px;
+  height: 130px;
+  perspective: 1000px;
+}
+
+.card-pile .card-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 215, 0, 0.2);
+  background: linear-gradient(135deg, var(--card-bg), rgba(31, 20, 56, 0.8));
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.card-pile .card-layer:nth-child(1) { transform: translateY(0) rotate(1deg); }
+.card-pile .card-layer:nth-child(2) { transform: translateY(2px) rotate(-1deg); }
+.card-pile .card-layer:nth-child(3) { transform: translateY(4px) rotate(2deg); }
+.card-pile .card-layer:nth-child(4) { transform: translateY(6px) rotate(-2deg); }
+
+.card-pile-count {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--gold-primary);
+  padding: 8px 12px;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: bold;
+  border: 2px solid var(--gold-primary);
+  z-index: 5;
 }
 
 /* Win overlay */
@@ -1557,33 +1992,33 @@ body {
 }
 
 /* ==== RESPONSIVE DESIGN ==== */
-@media (max-width: 768px) {
-  /* ... existing code ... */
-  
-  /* Stacked cards on mobile */
-  .battle-card.stacked {
-    width: 70px;
-    height: 100px;
-    margin-left: -45px;
+@media (max-width: 1400px) {
+  .battle-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
   }
   
-  .battle-card.stacked .card-top {
-    height: 40px;
-    font-size: 1.5rem;
+  .battle-left {
+    grid-column: 1;
+    grid-row: 1 / span 3;
   }
   
-  .battle-card.stacked .card-name-battle {
-    font-size: 0.55rem;
-    height: 20px;
+  .battle-right {
+    grid-column: 1;
+    grid-row: 4;
+    max-width: 100%;
+    flex-direction: row;
+    gap: 20px;
   }
   
-  .battle-card.stacked .card-type-battle {
-    font-size: 0.5rem;
+  .card-info-panel {
+    flex: 1;
+    height: 320px;
   }
   
-  .hand-warning {
-    font-size: 0.75rem;
-    padding: 3px 10px;
+  .battle-log {
+    flex: 1;
+    height: 320px;
   }
 }
 
@@ -1655,6 +2090,23 @@ body {
   .header-right {
     justify-content: center;
   }
+  
+  .battle-right {
+    flex-direction: column;
+  }
+  
+  .card-info-panel,
+  .battle-log {
+    height: 250px;
+  }
+  
+  .players-panel {
+    height: 250px;
+  }
+  
+  .hand-panel {
+    height: 300px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1682,7 +2134,9 @@ body {
     min-width: 120px;
     padding: 10px 20px;
   }
-  
+  .hand-panel {
+    height: 280px; /* Giảm thêm cho mobile */
+  }
   .hand-panel,
   .board-panel,
   .players-panel {
@@ -1698,9 +2152,34 @@ body {
     margin: 30px 15px;
     padding: 25px 20px;
   }
+  
+  .battle-card.stacked {
+    width: 95px;
+    height: 135px;
+    margin-left: -60px;
+  }
+  
+  .battle-card.stacked .card-top {
+    height: 55px;
+    font-size: 2rem;
+  }
+  
+  .battle-card.stacked .card-name-battle {
+    font-size: 0.75rem;
+    height: 28px;
+  }
+  
+  .card-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .hand-cards.stacked {
+    min-height: 180px;
+    max-height: 220px;
+  }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
   .auth-buttons {
     flex-direction: column;
   }
@@ -1773,9 +2252,52 @@ body {
   .win-result {
     font-size: 1.2rem;
   }
+  
+  .battle-card.stacked {
+    width: 85px;
+    height: 120px;
+    margin-left: -50px;
+  }
+  
+  .battle-card.stacked .card-top {
+    height: 45px;
+    font-size: 1.8rem;
+  }
+  
+  .battle-card.stacked .card-name-battle {
+    font-size: 0.65rem;
+    height: 24px;
+  }
+  
+  .card-info-panel {
+    padding: 15px;
+  }
 }
 
-/* ==== SCROLLBAR STYLING ==== */
+/* ==== ANIMATION CHO CARD INFO ==== */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.card-info-panel {
+  animation: slideInRight 0.5s ease;
+}
+
+/* ==== HOVER EFFECT CHO CARD STACKED ==== */
+.battle-card.stacked:hover .card-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px);
+  transition: all 0.3s ease;
+}
+
+/* ==== SCROLLBAR STYLING MỚI ==== */
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -1794,6 +2316,21 @@ body {
   background: linear-gradient(var(--gold-secondary), var(--ancient-blue));
 }
 
+/* Card info panel scrollbar */
+.card-info-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.card-info-panel::-webkit-scrollbar-track {
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 4px;
+}
+
+.card-info-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--gold-primary), var(--ancient-purple));
+  border-radius: 4px;
+}
+
 /* Battle log scrollbar */
 .battle-log::-webkit-scrollbar {
   width: 6px;
@@ -1806,6 +2343,21 @@ body {
 
 .battle-log::-webkit-scrollbar-thumb {
   background: linear-gradient(var(--gold-primary), var(--ancient-purple));
+  border-radius: 3px;
+}
+
+/* Hand cards scrollbar */
+.hand-cards::-webkit-scrollbar {
+  height: 6px;
+}
+
+.hand-cards::-webkit-scrollbar-track {
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 3px;
+}
+
+.hand-cards::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--gold-primary), var(--ancient-purple));
   border-radius: 3px;
 }
 
@@ -1959,223 +2511,386 @@ body {
   animation: pulse 1s infinite;
 }
 
-/* ==== HAND CARD STACKING STYLES ==== */
-.hand-cards.stacked {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-end;
-  padding: 15px 5px;
-  min-height: 160px;
-  position: relative;
-  overflow-x: auto;
-  overflow-y: visible;
+/* ==== CARD INFO THEME COLORS ==== */
+.card-info-type {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  display: inline-block;
+  margin: 5px 0;
 }
 
-.battle-card.stacked {
-  position: relative;
-  width: 90px;
-  height: 130px;
-  margin-left: -60px; /* Giảm khoảng cách chồng lên nhau */
-  transition: all 0.3s ease;
-  z-index: 1;
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.3),
-    -2px 0 5px rgba(0, 0, 0, 0.2);
+.card-info-type.attack {
+  background: rgba(205, 92, 92, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(205, 92, 92, 0.3);
 }
 
-.battle-card.stacked:first-child {
-  margin-left: 0;
+.card-info-type.defense {
+  background: rgba(65, 105, 225, 0.2);
+  color: #6b8cff;
+  border: 1px solid rgba(65, 105, 225, 0.3);
 }
 
-.battle-card.stacked:hover {
-  margin-left: -30px;
-  margin-right: 30px;
-  transform: translateY(-15px) scale(1.1);
-  z-index: 100;
-  border-color: var(--gold-primary);
-  box-shadow: 
-    0 10px 20px rgba(255, 215, 0, 0.4),
-    -5px 0 10px rgba(0, 0, 0, 0.3);
+.card-info-type.heal {
+  background: rgba(50, 205, 50, 0.2);
+  color: #32cd32;
+  border: 1px solid rgba(50, 205, 50, 0.3);
 }
 
-.battle-card.stacked.selected {
-  transform: translateY(-20px) scale(1.15);
-  border-color: var(--ancient-green);
-  box-shadow: 
-    0 15px 30px rgba(50, 205, 50, 0.6),
-    -8px 0 15px rgba(0, 0, 0, 0.4);
-  z-index: 101;
+.card-info-type.mana {
+  background: rgba(147, 112, 219, 0.2);
+  color: #9370db;
+  border: 1px solid rgba(147, 112, 219, 0.3);
 }
 
-.battle-card.stacked.insufficient-mana {
-  opacity: 0.5;
-  filter: grayscale(0.8);
+.card-info-type.draw {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
-/* Card content cho stacked cards */
-.battle-card.stacked .card-top {
-  height: 50px;
-  font-size: 1.8rem;
+.card-info-type.special {
+  background: rgba(255, 20, 147, 0.2);
+  color: #ff1493;
+  border: 1px solid rgba(255, 20, 147, 0.3);
 }
 
-.battle-card.stacked .card-content {
-  padding: 6px;
+.card-info-type.combo {
+  background: rgba(255, 140, 0, 0.2);
+  color: #ff8c00;
+  border: 1px solid rgba(255, 140, 0, 0.3);
 }
 
-.battle-card.stacked .card-name-battle {
-  font-size: 0.65rem;
-  height: 24px;
-  line-height: 1.1;
+/* Highlight card */
+.highlight-card {
+  animation: highlightPulse 2s infinite;
 }
 
-.battle-card.stacked .card-type-battle {
-  font-size: 0.6rem;
+@keyframes highlightPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
 }
 
-.battle-card.stacked .card-cost {
-  font-size: 0.7rem;
-  padding: 1px 6px;
-}
-
-.battle-card.stacked .card-power {
-  font-size: 0.7rem;
-  padding: 1px 8px;
-}
-
-/* Card counter cho stacked cards */
-.card-counter {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: var(--ancient-red);
+/* Thêm vào file CSS của bạn */
+.jol-badge {
+  background: linear-gradient(45deg, #4CAF50, #8BC34A);
   color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-weight: bold;
+}
+
+.jol-tooltip {
+  background: linear-gradient(45deg, #4CAF50, #8BC34A);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin: 5px 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Màu sắc đặc biệt cho card JOL */
+.battle-card.jol-card {
+  border: 2px solid #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.card-top.jol {
+  background: linear-gradient(45deg, #4CAF50, #8BC34A);
+}
+/* ==== SHIELD DISPLAY STYLES ==== */
+.shield-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+  background: rgba(65, 105, 225, 0.15);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(65, 105, 225, 0.3);
+  font-size: 0.9rem;
+}
+
+.shield-label {
+  color: var(--ancient-blue);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.shield-label::before {
+  content: "🛡️";
+  font-size: 0.9rem;
+}
+
+.shield-value {
+  color: white;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Shield types */
+.temp-shield {
+  background: rgba(147, 112, 219, 0.15);
+  border-color: rgba(147, 112, 219, 0.3);
+}
+
+.temp-shield .shield-label {
+  color: var(--ancient-purple);
+}
+
+.temp-shield .shield-label::before {
+  content: "🌀";
+}
+
+.regular-shield {
+  background: rgba(65, 105, 225, 0.15);
+  border-color: rgba(65, 105, 225, 0.3);
+}
+
+.avatar-shield {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.avatar-shield .shield-label {
+  color: var(--gold-primary);
+}
+
+.avatar-shield .shield-label::before {
+  content: "✨";
+}
+
+/* Shield animation effects */
+@keyframes shieldGain {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shieldBreak {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: scale(0.5); }
+}
+
+.shield-gain {
+  animation: shieldGain 0.5s ease;
+}
+
+.shield-break {
+  animation: shieldBreak 0.3s ease;
+}
+
+/* Shield icon in player stats */
+.shield-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
+  background: rgba(65, 105, 225, 0.3);
+  border-radius: 50%;
+  color: white;
+  font-size: 0.8rem;
+  margin-left: 5px;
+}
+
+/* Shield status in player card */
+.player-shield-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.shield-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shield-item.regular {
+  color: #6b8cff;
+}
+
+.shield-item.temp {
+  color: #9370db;
+}
+
+.shield-item.avatar {
+  color: #ffd700;
+}
+
+/* Shield display in header */
+.header-shield-display {
+  background: linear-gradient(135deg, rgba(65, 105, 225, 0.2), rgba(147, 112, 219, 0.2));
+  padding: 8px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(65, 105, 225, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-shield-value {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(65, 105, 225, 0.5);
+}
+
+/* Cập nhật player-battle-card để hiển thị shield */
+.player-battle-card .shield-status {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.shield-bar {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.shield-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4169E1, #6b8cff);
+  transition: width 0.3s ease;
+}
+
+.shield-fill.temp {
+  background: linear-gradient(90deg, #9370DB, #b19cd9);
+}
+
+.shield-text {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+/* Shield effect popup */
+.shield-popup {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  z-index: 100;
+  border: 1px solid #4169E1;
+  box-shadow: 0 3px 10px rgba(65, 105, 225, 0.3);
+}
+
+.shield-popup.gain {
+  color: #32cd32;
+  border-color: #32cd32;
+}
+
+.shield-popup.lose {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
+/* Shield overlay on player card */
+.player-shield-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(65, 105, 225, 0.1);
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.player-shield-overlay.active {
+  animation: shieldPulse 2s infinite;
+}
+
+@keyframes shieldPulse {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.3; }
+}
+
+/* Thêm vào HTML player-battle-card (cập nhật phần CSS tương ứng) */
+.player-battle-card .player-stats {
+  position: relative;
+  z-index: 2;
+}
+
+/* Shield counter */
+.shield-counter {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(65, 105, 225, 0.8);
+  color: white;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: bold;
-  border: 2px solid var(--ivory);
-  z-index: 10;
+  border: 2px solid white;
+  z-index: 3;
 }
 
-/* Warning cho nhiều bài */
-.hand-warning {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, var(--ancient-red), #8B0000);
-  color: white;
-  padding: 5px 15px;
-  border-radius: 15px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  z-index: 100;
-  box-shadow: 0 4px 10px rgba(205, 92, 92, 0.5);
-  animation: pulseWarning 1.5s infinite;
-  white-space: nowrap;
+/* Shield visualization in battle log */
+.log-entry.shield {
+  border-left-color: #4169E1;
+  background: rgba(65, 105, 225, 0.1);
 }
 
-@keyframes pulseWarning {
-  0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
-  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+.log-entry.shield-gain {
+  border-left-color: #32cd32;
+  background: rgba(50, 205, 50, 0.1);
 }
 
-/* Hand controls cho stacked layout */
-.hand-controls.stacked {
-  margin-top: 40px;
+.log-entry.shield-break {
+  border-left-color: #ff6b6b;
+  background: rgba(205, 92, 92, 0.1);
 }
 
-/* Tooltip cho stacked cards */
-.battle-card.stacked .card-tooltip {
-  position: absolute;
-  bottom: 140%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.95);
-  color: white;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid var(--gold-primary);
-  z-index: 1000;
-  pointer-events: none;
-  min-width: 180px;
-  font-size: 0.85rem;
-  white-space: normal;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.battle-card.stacked:hover .card-tooltip {
-  opacity: 1;
-}
-
-/* Card count display */
-.hand-count-warning {
-  color: var(--ancient-red);
-  font-weight: bold;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-/* Card pile effect */
-.card-pile {
-  position: relative;
-  width: 90px;
-  height: 130px;
-  perspective: 1000px;
-}
-
-.card-pile .card-layer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 215, 0, 0.2);
-  background: linear-gradient(135deg, var(--card-bg), rgba(31, 20, 56, 0.8));
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.card-pile .card-layer:nth-child(1) { transform: translateY(0) rotate(1deg); }
-.card-pile .card-layer:nth-child(2) { transform: translateY(2px) rotate(-1deg); }
-.card-pile .card-layer:nth-child(3) { transform: translateY(4px) rotate(2deg); }
-.card-pile .card-layer:nth-child(4) { transform: translateY(6px) rotate(-2deg); }
-
-.card-pile-count {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: var(--gold-primary);
-  padding: 8px 12px;
-  border-radius: 50%;
-  font-size: 1rem;
-  font-weight: bold;
-  border: 2px solid var(--gold-primary);
-  z-index: 5;
-}
-
-/* Scrollbar cho hand cards */
-.hand-cards::-webkit-scrollbar {
-  height: 6px;
-}
-
-.hand-cards::-webkit-scrollbar-track {
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 3px;
-}
-
-.hand-cards::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, var(--gold-primary), var(--ancient-purple));
-  border-radius: 3px;
+/* Responsive shield display */
+@media (max-width: 768px) {
+  .shield-display {
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px 8px;
+  }
+  
+  .header-shield-display {
+    padding: 5px 10px;
+  }
+  
+  .player-shield-info {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }

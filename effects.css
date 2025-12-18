@@ -1,0 +1,371 @@
+/* ==== effects.css ==== */
+/* Hiển thị effect icons */
+.effect-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    margin: 2px;
+    font-size: 14px;
+    cursor: help;
+    position: relative;
+    transition: transform 0.2s;
+}
+
+.effect-icon:hover {
+    transform: scale(1.2);
+    z-index: 10;
+}
+
+.effect-icon.buff {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid #4CAF50;
+}
+
+.effect-icon.debuff {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid #F44336;
+}
+
+.effect-icon.stance {
+    background: rgba(33, 150, 243, 0.2);
+    border: 1px solid #2196F3;
+}
+
+.effect-icon.aura {
+    background: rgba(255, 152, 0, 0.2);
+    border: 1px solid #FF9800;
+}
+
+.effect-icon.mark {
+    background: rgba(156, 39, 176, 0.2);
+    border: 1px solid #9C27B0;
+}
+
+.effect-icon.curse {
+    background: rgba(121, 85, 72, 0.2);
+    border: 1px solid #795548;
+}
+
+.effect-icon.passive {
+    background: rgba(96, 125, 139, 0.2);
+    border: 1px solid #607D8B;
+}
+
+.effect-duration {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #333;
+    color: white;
+    font-size: 10px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.effect-stacks {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #FF9800;
+    color: white;
+    font-size: 10px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Effect Popup */
+.effect-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.effect-popup-content {
+    background: #2d2d3d;
+    border: 2px solid #4CAF50;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.effect-popup-title {
+    color: #4CAF50;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.5em;
+}
+
+.effect-popup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.effect-popup-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px;
+    border-left: 4px solid #4CAF50;
+}
+
+.effect-popup-item.buff {
+    border-left-color: #4CAF50;
+}
+
+.effect-popup-item.debuff {
+    border-left-color: #F44336;
+}
+
+.effect-popup-item.stance {
+    border-left-color: #2196F3;
+}
+
+.effect-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.effect-popup-icon {
+    font-size: 24px;
+}
+
+.effect-popup-type {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.effect-popup-desc {
+    color: #ddd;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.effect-popup-info {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 8px;
+}
+
+.effect-popup-modifiers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.effect-popup-modifiers .modifier {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #ddd;
+}
+
+.effect-popup-deck {
+    font-size: 11px;
+    color: #FF9800;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.close-effect-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
+    width: 100%;
+    font-size: 14px;
+}
+
+.close-effect-btn:hover {
+    background: #45a049;
+}
+
+.no-effects {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* Player effects display trong battle */
+.player-effects-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 8px;
+    justify-content: center;
+}
+
+.player-effect-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    position: relative;
+}
+
+.effect-duration-small {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #333;
+    color: white;
+    font-size: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* My effects display */
+.player-effects-display {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.player-effects-display h4 {
+    color: #4CAF50;
+    margin-bottom: 8px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.effects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.my-effect {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    border-left: 3px solid #4CAF50;
+    font-size: 12px;
+    cursor: help;
+}
+
+.my-effect.buff { border-left-color: #4CAF50; }
+.my-effect.debuff { border-left-color: #F44336; }
+.my-effect.stance { border-left-color: #2196F3; }
+.my-effect.aura { border-left-color: #FF9800; }
+.my-effect.mark { border-left-color: #9C27B0; }
+.my-effect.curse { border-left-color: #795548; }
+.my-effect.passive { border-left-color: #607D8B; }
+
+.my-effect-icon {
+    font-size: 14px;
+}
+
+.my-effect-name {
+    flex: 1;
+    color: #ddd;
+}
+
+.my-effect-duration {
+    background: #333;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+/* Effect tooltip */
+.effect-tooltip {
+    background: #2d2d3d;
+    border: 1px solid #4CAF50;
+    border-radius: 6px;
+    padding: 10px;
+    max-width: 300px;
+    font-size: 12px;
+}
+
+.effect-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.effect-icon-large {
+    font-size: 20px;
+}
+
+.effect-deck {
+    background: #FF9800;
+    color: black;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    margin-left: auto;
+}
+
+.effect-desc {
+    color: #ddd;
+    margin-bottom: 8px;
+}
+
+.effect-modifiers {
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 8px;
+}
+
+.modifiers-title {
+    color: #4CAF50;
+    font-size: 11px;
+    margin-bottom: 5px;
+}
+
+.modifier {
+    color: #ddd;
+    font-size: 11px;
+    margin-bottom: 3px;
+}
+
+.effect-source {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #888;
+}

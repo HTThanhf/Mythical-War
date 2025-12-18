@@ -7,9 +7,10 @@ import {
   onSnapshot,
   updateDoc,
 } from "./firebase.js";
-import { initBattle } from "./battle.js";
+import { initBattle } from "./battle/index.js";
+import { DeckManager } from "./deck-manager.js";
 
-const DECKS = ["Jol", "Chung Ah", "Aramis", "Zupitere", "Mel", "Mano"];
+const DECKS = DeckManager.getAllDecks(); // Sử dụng DeckManager
 
 // Mở giao diện chọn deck
 export function openDeckSelect(roomId) {
@@ -36,6 +37,16 @@ export function openDeckSelect(roomId) {
   // Lắng nghe realtime phòng
   onSnapshot(roomRef, (snap) => {
     if (!snap.exists()) return;
+    
+    // KIỂM TRA CÁC PHẦN TỬ DOM TRƯỚC KHI TIẾP TỤC
+    const grid = document.getElementById("deck-grid");
+    const hint = document.getElementById("deck-hint");
+    
+    if (!grid || !hint) {
+      console.log("DOM chưa sẵn sàng, bỏ qua cập nhật...");
+      return;
+    }
+    
     const data = snap.data();
     const players = data.players || [];
     const currentUserUid = auth.currentUser?.uid;
@@ -80,7 +91,6 @@ export function openDeckSelect(roomId) {
     });
 
     // Cập nhật hint
-    const hint = document.getElementById("deck-hint");
     if (hasChosenDeck) {
       hint.textContent = `Bạn đã chọn deck: ${currentPlayer.deck}. Đang chờ người chơi khác...`;
     } else {
@@ -102,7 +112,6 @@ export function openDeckSelect(roomId) {
     }
   });
 }
-
 // Xử lý chọn deck
 async function chooseDeck(roomRef, players, deck) {
   const user = auth.currentUser;
@@ -148,28 +157,36 @@ async function chooseDeck(roomRef, players, deck) {
 
 // Hàm tạo 4 lá bài ngẫu nhiên
 function generateInitialHand(deckName) {
-  const cards = [];
-  const cardTypes = ["attack", "defense", "heal", "mana"];
-  const prefixes = ["Mạnh mẽ", "Nhanh nhẹn", "Bí ẩn", "Thần thánh", "Cổ xưa", "Tối thượng"];
-  
-  for (let i = 0; i < 4; i++) {
-    const type = cardTypes[Math.floor(Math.random() * cardTypes.length)];
-    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const power = Math.floor(Math.random() * 100) + 1;
-    cards.push(`${prefix} ${type} - ${power} (${deckName})`);
+  const deck = DeckManager.getDeck(deckName);
+  if (deck && deck.generateCard) {
+    // Tạo 4 lá bài đầu tiên từ deck
+    const cards = [];
+    for (let i = 0; i < 4; i++) {
+      cards.push(deck.generateCard());
+    }
+    return cards;
+  } else {
+    // Fallback cho deck generic
+    const cards = [];
+    const cardTypes = ["attack", "defense", "heal", "mana", "draw"];
+    
+    for (let i = 0; i < 4; i++) {
+      const type = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+      const mana = Math.floor(Math.random() * 3) + 1;
+      const power = mana * 25 + Math.floor(Math.random() * 50);
+      cards.push(`${type.charAt(0).toUpperCase() + type.slice(1)} Card [${mana}] - ${power}`);
+    }
+    return cards;
   }
-  
-  return cards;
 }
-
 // Chuẩn bị dữ liệu vào trận
 async function startBattle(roomRef, players) {
-  // Mỗi người chơi nhận 4 lá bài đầu tiên
+  // Mỗi người chơi nhận 4 lá bài đầu tiên ĐÚNG VỚI DECK CỦA HỌ
   const updatedPlayers = players.map((p) => ({
     ...p,
     health: 1000,
     mana: 3,
-    hand: generateInitialHand(p.deck), // Thêm 4 lá bài
+    hand: generateInitialHand(p.deck), // Sử dụng hàm đã sửa
     deckCount: 60, // 64 - 4 = 60 lá còn lại
     alive: true,
   }));
@@ -245,4 +262,24 @@ async function exitRoom(roomId) {
   
   alert("Đã thoát khỏi phòng!");
   location.reload();
+}
+
+function getJolCardInfo(cardName) {
+  const jolCardInfo = {
+    "Quick Slash": { mana: 1, power: 120, type: "attack" },
+    "Twin Strike": { mana: 2, power: 80, type: "attack" },
+    "Elven Precision": { mana: 2, power: 180, type: "attack" },
+    "Moonlight Pierce": { mana: 2, power: 150, type: "attack" },
+    "Arcane Sweep": { mana: 3, power: 120, type: "attack" },
+    "Finishing Blow": { mana: 3, power: 250, type: "attack" },
+    "Elven Reflex": { mana: 1, power: 0, type: "defense" },
+    "Guard of the Ancient": { mana: 2, power: 300, type: "defense" },
+    "Blink Step": { mana: 1, power: 0, type: "defense" },
+    "Spirit Barrier": { mana: 2, power: 400, type: "defense" },
+    "Elven Grace": { mana: 1, power: 200, type: "heal" },
+    "Mana Surge": { mana: 0, power: 1, type: "mana" },
+    "Focus Mind": { mana: 1, power: 2, type: "draw" }
+  };
+  
+  return jolCardInfo[cardName] || { mana: 2, power: 100, type: "attack" };
 }

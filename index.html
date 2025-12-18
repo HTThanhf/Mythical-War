@@ -2,11 +2,19 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dungeon Mayhem Game</title>
+  
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="effects.css">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
+  <!-- Auth Container -->
   <div id="auth-container">
     <h1>Đăng Nhập / Đăng Ký</h1>
     <input type="email" id="email" placeholder="Email" />
@@ -17,6 +25,7 @@
     </div>
   </div>
 
+  <!-- Game Container -->
   <div id="game-container" style="display: none;">
     <div class="sidebar">
       <h2>Menu</h2>
@@ -41,17 +50,19 @@
       <div id="player" class="section">Thông tin nhân vật (làm sau)</div>
       <div id="friends" class="section">Bạn bè (làm sau)</div>
       <div id="setting" class="section">
-	    <h2>Cài đặt (làm sau)</h2>
-	    <button id="delete-account-btn" class="danger-btn">Xóa tài khoản</button>
-	  </div>
+        <h2>Cài đặt (làm sau)</h2>
+        <button id="delete-account-btn" class="danger-btn">Xóa tài khoản</button>
+      </div>
     </div>
   </div>
 
- 
-
+  <!-- JavaScript Modules -->
+  <!-- Lưu ý: Thứ tự import QUAN TRỌNG -->
   <script type="module" src="firebase.js"></script>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="deck-manager.js"></script> <!-- Thêm vào -->
   <script type="module" src="gameplay.js"></script>
-  <script type="module" src="battle.js"></script>
+  <script type="module" src="battle/hand-layout-manager.js"></script> <!-- Thêm vào -->
+  <script type="module" src="battle/index.js"></script> <!-- Sửa từ index.js thành battle/index.js -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>

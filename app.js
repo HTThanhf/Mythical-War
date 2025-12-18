@@ -15,7 +15,7 @@ import {
   arrayUnion
 } from "./firebase.js";
 import { openDeckSelect } from "./gameplay.js";
-import { initBattle } from "./battle.js";
+import { initBattle } from "./battle/index.js";
 
 // ==== THÊM HÀM initUI ====
 function initUI() {
