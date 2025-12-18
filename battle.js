@@ -162,6 +162,7 @@ export function initBattle(roomId) {
   let selectedTarget = null;
   let isMyTurn = false;
   let hasPlayedThisTurn = false;
+  let jolPassivesApplied = false;
   
   // Event listeners
   document.getElementById("exit-battle-btn").addEventListener("click", () => exitBattle(roomId));
@@ -179,6 +180,23 @@ export function initBattle(roomId) {
     
     const me = players.find((p) => p.uid === currentUserUid);
     if (!me) return;
+    
+    // ==== PHẦN MỚI: Áp dụng passive JOL ====
+    if (!jolPassivesApplied && me.deck === "JOL – ELVEN PRINCE") {
+      // Battle Instinct: +1 lá khởi đầu
+      if (me.deckCount > 0 && (me.hand?.length || 0) < STARTING_HAND_SIZE + 1) {
+        const newCard = generateCard(me.deck);
+        me.hand = [...(me.hand || []), newCard];
+        me.deckCount--;
+        addLogMessage(`🌟 ${me.name} kích hoạt Battle Instinct: +1 lá khởi đầu!`, "special");
+        
+        // Cập nhật Firebase
+        await updateDoc(roomRef, {
+          players: players.map(p => p.uid === currentUserUid ? me : p)
+        });
+      }
+      jolPassivesApplied = true;
+    }
     
     // Cập nhật lượt chơi
     isMyTurn = (turnUid === currentUserUid && me.alive);
@@ -223,6 +241,36 @@ export function initBattle(roomId) {
     // Xử lý lượt bắt đầu
     if (isMyTurn && !data.turnStarted) {
       await handleTurnStart(roomRef, players, me, data);
+    }
+    
+    // Xử lý Avatar effect đầu lượt
+    if (isMyTurn && me.avatarActive && me.avatarActive.active) {
+      // Gây damage cho tất cả người chơi khác
+      const otherPlayers = players.filter(p => p.uid !== currentUserUid && p.alive);
+      if (otherPlayers.length > 0) {
+        addLogMessage(`⚡ Avatar của ${me.name} gây 100 damage cho tất cả đối thủ!`, "special");
+        
+        const updatedPlayers = players.map(p => {
+          if (p.uid !== currentUserUid && p.alive) {
+            return applyDamage(p, 100, currentUserUid, players, "Avatar Aura");
+          }
+          return p;
+        });
+        
+        // Giảm duration
+        const playerIndex = updatedPlayers.findIndex(p => p.uid === currentUserUid);
+        if (playerIndex !== -1) {
+          updatedPlayers[playerIndex].avatarActive.duration--;
+          if (updatedPlayers[playerIndex].avatarActive.duration <= 0) {
+            updatedPlayers[playerIndex].avatarActive.active = false;
+            addLogMessage(`⚡ Avatar của ${me.name} kết thúc!`, "special");
+          }
+        }
+        
+        await updateDoc(roomRef, {
+          players: updatedPlayers
+        });
+      }
     }
     
     // Cập nhật nút bấm
@@ -489,21 +537,96 @@ export function initBattle(roomId) {
     const skipBtn = document.getElementById("skip-btn");
     const endTurnBtn = document.getElementById("end-turn-btn");
     
-    const canPlayCard = isMyTurn && selectedCard && selectedTarget;
+    // Xác định có cần target không dựa trên card
+    let needsTarget = true;
+    let cardInfo = null;
+    
+    if (selectedCard) {
+      cardInfo = parseCardInfo(selectedCard);
+      
+      // Card JOL: kiểm tra target type
+      if (cardInfo.isJolCard) {
+        // Các card JOL không cần target: self, self_and_others
+        needsTarget = !(cardInfo.target === "self" || cardInfo.target === "self_and_others");
+      } else {
+        // Card thường: chỉ attack cần target
+        needsTarget = cardInfo.type.toLowerCase() === "attack";
+      }
+    }
+    
+    const canPlayCard = isMyTurn && selectedCard && (needsTarget ? selectedTarget : true);
     const canEndTurn = isMyTurn && hasPlayedThisTurn;
     
     playBtn.disabled = !canPlayCard;
     skipBtn.disabled = !isMyTurn;
     endTurnBtn.disabled = !canEndTurn;
     
-    // Thêm tooltip
-    playBtn.title = !isMyTurn ? "Không phải lượt của bạn" :
-                   !selectedCard ? "Chưa chọn bài" :
-                   !selectedTarget ? "Chưa chọn mục tiêu" : "Đánh bài đã chọn";
+    // Thêm tooltip chi tiết
+    if (!isMyTurn) {
+      playBtn.title = "Không phải lượt của bạn";
+      playBtn.classList.remove("can-play");
+    } else if (!selectedCard) {
+      playBtn.title = "Chưa chọn bài";
+      playBtn.classList.remove("can-play");
+    } else if (needsTarget && !selectedTarget) {
+      playBtn.title = "Chưa chọn mục tiêu";
+      playBtn.classList.remove("can-play");
+    } else {
+      // Có thể đánh bài
+      playBtn.title = "Đánh bài đã chọn";
+      playBtn.classList.add("can-play");
+      
+      // Hiển thị thông tin chi tiết cho card JOL
+      if (cardInfo && cardInfo.isJolCard) {
+        if (!needsTarget) {
+          playBtn.title = `Áp dụng ${cardInfo.name} lên bản thân`;
+        } else {
+          playBtn.title = `Dùng ${cardInfo.name} lên mục tiêu đã chọn`;
+        }
+      }
+    }
     
-    // Sự kiện cho nút đánh bài
+    // Tooltip cho nút bỏ lượt
+    if (!isMyTurn) {
+      skipBtn.title = "Không phải lượt của bạn";
+    } else {
+      const roomRef = doc(db, "rooms", roomId);
+      getDoc(roomRef).then((roomSnap) => {
+        if (roomSnap.exists()) {
+          const data = roomSnap.data();
+          const players = data.players || [];
+          const currentUserUid = auth.currentUser?.uid;
+          const me = players.find(p => p.uid === currentUserUid);
+          
+          if (me) {
+            // Kiểm tra có thể đánh bài nào không
+            const canPlayAnyCard = me.hand?.some(card => {
+              const cardInfo = parseCardInfo(card);
+              return (me.mana || 0) >= cardInfo.cost;
+            });
+            
+            if (canPlayAnyCard) {
+              skipBtn.title = "⚠️ Bạn vẫn còn bài có thể đánh. Dùng 'Kết thúc lượt' sau khi đã đánh bài.";
+            } else {
+              skipBtn.title = "Bỏ lượt (khi không đủ mana để đánh bài)";
+            }
+          }
+        }
+      });
+    }
+    
+    // Tooltip cho nút kết thúc lượt
+    if (!isMyTurn) {
+      endTurnBtn.title = "Không phải lượt của bạn";
+    } else if (!hasPlayedThisTurn) {
+      endTurnBtn.title = "Bạn cần đánh ít nhất 1 lá bài trước khi kết thúc lượt";
+    } else {
+      endTurnBtn.title = "Kết thúc lượt và chuyển sang người tiếp theo";
+    }
+    
+    // ==== Sự kiện cho nút đánh bài ====
     playBtn.onclick = async () => {
-      if (!selectedCard || !selectedTarget || !isMyTurn) return;
+      if (!selectedCard || !isMyTurn) return;
       
       const roomRef = doc(db, "rooms", roomId);
       const roomSnap = await getDoc(roomRef);
@@ -514,49 +637,82 @@ export function initBattle(roomId) {
       const currentUserUid = auth.currentUser?.uid;
       
       const me = players.find(p => p.uid === currentUserUid);
-      const targetPlayer = players.find(p => p.uid === selectedTarget);
+      const targetPlayer = selectedTarget ? players.find(p => p.uid === selectedTarget) : null;
       
-      if (!me || !targetPlayer || !targetPlayer.alive) {
-        addLogMessage("❌ Mục tiêu không hợp lệ!", "error");
+      if (!me) {
+        addLogMessage("❌ Không tìm thấy thông tin người chơi!", "error");
         return;
       }
       
       const cardInfo = parseCardInfo(selectedCard);
+      
+      // Kiểm tra mana
       if ((me.mana || 0) < cardInfo.cost) {
-        addLogMessage(`❌ Không đủ mana! Cần ${cardInfo.cost} mana`, "error");
+        addLogMessage(`❌ Không đủ mana! Cần ${cardInfo.cost} mana, bạn có ${me.mana || 0}`, "error");
+        return;
+      }
+      
+      // Kiểm tra target cho card cần target
+      if (cardInfo.needsTarget && !selectedTarget) {
+        addLogMessage("❌ Cần chọn mục tiêu!", "error");
+        return;
+      }
+      
+      // Kiểm tra target còn sống (nếu cần)
+      if (cardInfo.needsTarget && targetPlayer && !targetPlayer.alive) {
+        addLogMessage("❌ Mục tiêu đã thua!", "error");
         return;
       }
       
       // Hiệu ứng đánh bài
-      playCardAnimation(selectedCard, me.name, targetPlayer.name);
+      const targetName = targetPlayer ? targetPlayer.name : "Bản thân";
+      playCardAnimation(selectedCard, me.name, targetName);
       
       // Áp dụng hiệu ứng card
       const updatedPlayers = applyCardEffect(selectedCard, players, me.uid, selectedTarget);
       
       // Thêm vào lịch sử
-      addLogMessage(`🎯 ${me.name} dùng "${cardInfo.name}" lên ${targetPlayer.name}`, "action");
+      if (cardInfo.needsTarget && targetPlayer) {
+        addLogMessage(`🎯 ${me.name} dùng "${cardInfo.name}" lên ${targetPlayer.name}`, "action");
+      } else {
+        addLogMessage(`✨ ${me.name} dùng "${cardInfo.name}" lên bản thân`, "action");
+      }
       
       // Cập nhật Firebase
-      await updateDoc(roomRef, {
-        board: arrayUnion({
-          uid: currentUserUid,
-          card: selectedCard,
-          target: selectedTarget,
-          time: Date.now()
-        }),
-        players: updatedPlayers,
-        hasPlayedThisTurn: true,
-        turnStarted: true
-      });
-      
-      // Reset selection
-      selectedCard = null;
-      selectedTarget = null;
-      document.getElementById("selected-card-name").textContent = "";
-      document.getElementById("selected-target-name").textContent = "";
+      try {
+        await updateDoc(roomRef, {
+          board: arrayUnion({
+            uid: currentUserUid,
+            card: selectedCard,
+            target: selectedTarget,
+            time: Date.now()
+          }),
+          players: updatedPlayers,
+          hasPlayedThisTurn: true,
+          turnStarted: true
+        });
+        
+        // Reset selection
+        selectedCard = null;
+        selectedTarget = null;
+        document.getElementById("selected-card-name").textContent = "";
+        document.getElementById("selected-target-name").textContent = "";
+        
+        // Cập nhật lại giao diện
+        document.querySelectorAll(".battle-card.selected").forEach(card => {
+          card.classList.remove("selected");
+        });
+        document.querySelectorAll(".player-battle-card.targeted").forEach(card => {
+          card.classList.remove("targeted");
+        });
+        
+      } catch (error) {
+        console.error("Lỗi khi đánh bài:", error);
+        addLogMessage("❌ Lỗi khi đánh bài!", "error");
+      }
     };
     
-    // Sự kiện cho nút bỏ lượt
+    // ==== Sự kiện cho nút bỏ lượt ====
     skipBtn.onclick = async () => {
       if (!isMyTurn) return;
       
@@ -569,6 +725,8 @@ export function initBattle(roomId) {
       const currentUserUid = auth.currentUser?.uid;
       const me = players.find(p => p.uid === currentUserUid);
       
+      if (!me) return;
+      
       // Kiểm tra xem có thể đánh bài không
       const canPlayAnyCard = me.hand?.some(card => {
         const cardInfo = parseCardInfo(card);
@@ -576,14 +734,15 @@ export function initBattle(roomId) {
       });
       
       if (canPlayAnyCard) {
-        addLogMessage("⚠️ Bạn vẫn còn bài có thể đánh! Hãy sử dụng 'Kết thúc lượt' sau khi đã đánh bài.", "warning");
-        return;
+        const confirmSkip = confirm("⚠️ Bạn vẫn còn bài có thể đánh!\n\nBạn có chắc muốn bỏ lượt?\n\nNếu muốn kết thúc lượt sau khi đã đánh bài, hãy dùng nút 'Kết thúc lượt'.");
+        if (!confirmSkip) return;
       }
       
       addLogMessage(`⏭️ ${me.name} bỏ lượt`, "info");
       await handleEndTurn(roomId);
     };
   }
+
   
   function addLogMessage(message, type = "info") {
     const logDiv = document.getElementById("log-messages");
@@ -600,6 +759,73 @@ export function initBattle(roomId) {
 
 // ========== HÀM TẠO CARD ==========
 function generateCard(deckName) {
+  // ==== PHẦN MỚI: Xử lý deck JOL ====
+  if (deckName === "JOL – ELVEN PRINCE") {
+    // Danh sách tất cả card trong deck JOL
+    const jolCards = [];
+    
+    // ⚔️ TẤN CÔNG – 28 lá
+    for (let i = 0; i < 6; i++) jolCards.push("Quick Slash");
+    for (let i = 0; i < 4; i++) jolCards.push("Twin Strike");
+    for (let i = 0; i < 4; i++) jolCards.push("Elven Precision");
+    for (let i = 0; i < 4; i++) jolCards.push("Moonlight Pierce");
+    for (let i = 0; i < 4; i++) jolCards.push("Arcane Sweep");
+    for (let i = 0; i < 6; i++) jolCards.push("Finishing Blow");
+    
+    // 🛡️ PHÒNG THỦ – 12 lá
+    for (let i = 0; i < 4; i++) jolCards.push("Elven Reflex");
+    for (let i = 0; i < 4; i++) jolCards.push("Guard of the Ancient");
+    for (let i = 0; i < 2; i++) jolCards.push("Blink Step");
+    for (let i = 0; i < 2; i++) jolCards.push("Spirit Barrier");
+    
+    // 💫 HỖ TRỢ – 8 lá
+    for (let i = 0; i < 3; i++) jolCards.push("Elven Grace");
+    for (let i = 0; i < 3; i++) jolCards.push("Mana Surge");
+    for (let i = 0; i < 2; i++) jolCards.push("Focus Mind");
+    
+    // ⚡ ĐẶC BIỆT / ULTIMATE – 12 lá
+    for (let i = 0; i < 4; i++) jolCards.push("Avatar");
+    for (let i = 0; i < 2; i++) jolCards.push("Awakening: Eternity");
+    for (let i = 0; i < 2; i++) jolCards.push("Awakening: Blink of an Eye");
+    for (let i = 0; i < 2; i++) jolCards.push("Glory of the Elves");
+    for (let i = 0; i < 2; i++) jolCards.push("Last Stand");
+    
+    // 🌟 BỊ ĐỘNG – 4 lá (không thêm vào deck vì là passive)
+    // "Battle Instinct", "Blade Mastery", "Focused Guard", "Calm Before Storm"
+    
+    // Chọn random card từ deck
+    const randomIndex = Math.floor(Math.random() * jolCards.length);
+    const cardName = jolCards[randomIndex];
+    
+    // Thông tin card JOL
+    const jolCardInfo = {
+      "Quick Slash": { mana: 1, power: 120, type: "attack" },
+      "Twin Strike": { mana: 2, power: 80, type: "attack" },
+      "Elven Precision": { mana: 2, power: 180, type: "attack" },
+      "Moonlight Pierce": { mana: 2, power: 150, type: "attack" },
+      "Arcane Sweep": { mana: 3, power: 120, type: "attack" },
+      "Finishing Blow": { mana: 3, power: 250, type: "attack" },
+      "Elven Reflex": { mana: 1, power: 0, type: "defense" },
+      "Guard of the Ancient": { mana: 2, power: 300, type: "defense" },
+      "Blink Step": { mana: 1, power: 0, type: "defense" },
+      "Spirit Barrier": { mana: 2, power: 400, type: "defense" },
+      "Elven Grace": { mana: 1, power: 200, type: "heal" },
+      "Mana Surge": { mana: 0, power: 1, type: "mana" },
+      "Focus Mind": { mana: 1, power: 2, type: "draw" },
+      "Avatar": { mana: 3, power: 100, type: "special" },
+      "Awakening: Eternity": { mana: 1, power: 1, type: "special" },
+      "Awakening: Blink of an Eye": { mana: 2, power: 150, type: "special" },
+      "Glory of the Elves": { mana: 3, power: 0, type: "special" },
+      "Last Stand": { mana: 2, power: 200, type: "special" }
+    };
+    
+    const info = jolCardInfo[cardName] || { mana: 2, power: 100, type: "attack" };
+    
+    // Trả về định dạng card string tương thích
+    return `${cardName} [${info.mana}] - ${info.power}`;
+  }
+  
+  // ==== PHẦN CŨ: Xử lý các deck khác ====
   const cardTypes = [
     { type: "attack", weight: 3, mana: [1, 2, 3] },
     { type: "defense", weight: 2, mana: [1, 2] },
@@ -647,6 +873,92 @@ function generateCard(deckName) {
 
 // ========== PHÂN TÍCH CARD INFO ==========
 function parseCardInfo(cardString) {
+  // ==== PHẦN MỚI: Xử lý card JOL ====
+  const jolCardList = [
+    "Quick Slash", "Twin Strike", "Elven Precision", "Moonlight Pierce", 
+    "Arcane Sweep", "Finishing Blow", "Elven Reflex", "Guard of the Ancient", 
+    "Blink Step", "Spirit Barrier", "Elven Grace", "Mana Surge", "Focus Mind", 
+    "Avatar", "Awakening: Eternity", "Awakening: Blink of an Eye", 
+    "Glory of the Elves", "Last Stand"
+  ];
+  
+  // Kiểm tra xem có phải card JOL không
+  for (const jolCardName of jolCardList) {
+    if (cardString.startsWith(jolCardName)) {
+      // Lấy mana và power từ card string
+      const manaMatch = cardString.match(/\[(\d+)\]/);
+      const manaCost = manaMatch ? parseInt(manaMatch[1]) : 2;
+      
+      const powerMatch = cardString.match(/- (\d+)/);
+      const power = powerMatch ? parseInt(powerMatch[1]) : 100;
+      
+      // Xác định loại card và target
+      let type = "special";
+      let target = "single";
+      let needsTarget = true;
+      
+      if (jolCardName.includes("Slash") || jolCardName.includes("Strike") || 
+          jolCardName.includes("Precision") || jolCardName.includes("Pierce") ||
+          jolCardName.includes("Sweep") || jolCardName.includes("Blow") ||
+          jolCardName.includes("Blink of an Eye")) {
+        type = "attack";
+        target = "single";
+        needsTarget = true;
+      } 
+      else if (jolCardName.includes("Reflex") || jolCardName.includes("Guard") || 
+               jolCardName.includes("Blink Step") || jolCardName.includes("Barrier") ||
+               jolCardName.includes("Last Stand")) {
+        type = "defense";
+        target = "self";
+        needsTarget = false;
+      }
+      else if (jolCardName.includes("Grace")) {
+        type = "heal";
+        target = "self";
+        needsTarget = false;
+      }
+      else if (jolCardName.includes("Mana Surge")) {
+        type = "mana";
+        target = "self";
+        needsTarget = false;
+      }
+      else if (jolCardName.includes("Focus Mind")) {
+        type = "draw";
+        target = "self";
+        needsTarget = false;
+      }
+      else if (jolCardName.includes("Avatar") || jolCardName.includes("Awakening") ||
+               jolCardName.includes("Glory")) {
+        type = "special";
+        // Avatar có target = "all_others" cho damage
+        if (jolCardName === "Avatar") {
+          target = "self_and_others";
+          needsTarget = false; // Không cần chọn target vì ảnh hưởng đến tất cả
+        } else if (jolCardName === "Awakening: Blink of an Eye") {
+          target = "single";
+          needsTarget = true;
+        } else {
+          target = "self";
+          needsTarget = false;
+        }
+      }
+      
+      return {
+        name: jolCardName,
+        type: type.charAt(0).toUpperCase() + type.slice(1),
+        cost: manaCost,
+        power: power,
+        image: `${type}-card.png`,
+        fullName: cardString,
+        target: target,
+        needsTarget: needsTarget,
+        isJolCard: true,
+        originalCardName: jolCardName
+      };
+    }
+  }
+  
+  // ==== PHẦN CŨ: Xử lý card thông thường ====
   const parts = cardString.split(' - ');
   const namePart = parts[0];
   const power = parseInt(parts[1]) || 0;
@@ -676,13 +988,19 @@ function parseCardInfo(cardString) {
     }
   }
   
+  // Xác định có cần target không (chỉ attack cần target)
+  const needsTarget = type === "attack";
+  
   return {
     name: namePart.replace(/\[\d+\]/, '').trim(),
     type: type.charAt(0).toUpperCase() + type.slice(1),
     cost: manaCost,
     power: power,
     image: image,
-    fullName: cardString
+    fullName: cardString,
+    target: needsTarget ? "single" : "self",
+    needsTarget: needsTarget,
+    isJolCard: false
   };
 }
 
@@ -690,9 +1008,208 @@ function parseCardInfo(cardString) {
 function applyCardEffect(cardString, players, fromUid, toUid) {
   const cardInfo = parseCardInfo(cardString);
   const fromPlayer = players.find(p => p.uid === fromUid);
-  const toPlayer = players.find(p => p.uid === toUid);
+  const toPlayer = toUid ? players.find(p => p.uid === toUid) : null;
   
-  if (!fromPlayer || !toPlayer) return players;
+  if (!fromPlayer) return players;
+  
+  // ==== PHẦN MỚI: Xử lý card JOL ====
+  if (cardInfo.isJolCard) {
+    const updatedPlayers = players.map(p => {
+      // Xử lý cho người đánh bài
+      if (p.uid === fromUid) {
+        const newHand = p.hand.filter(card => card !== cardString);
+        let newMana = Math.max(0, (p.mana || 0) - cardInfo.cost);
+        
+        // Xử lý đặc biệt cho từng loại card JOL
+        const cardName = cardInfo.originalCardName || cardInfo.name;
+        
+        // ⚔️ TẤN CÔNG
+        if (cardName === "Quick Slash" || cardName === "Elven Precision" || 
+            cardName === "Moonlight Pierce" || cardName === "Finishing Blow") {
+          // Các card damage đơn - xử lý ở phần mục tiêu
+        }
+        else if (cardName === "Twin Strike") {
+          // Xử lý ở phần mục tiêu (sẽ xử lý 2 mục tiêu)
+        }
+        else if (cardName === "Arcane Sweep") {
+          // Xử lý ở phần mục tiêu (sẽ xử lý tất cả người chơi khác)
+        }
+        
+        // 🛡️ PHÒNG THỦ
+        else if (cardName === "Elven Reflex") {
+          p.defenseBuff = { type: "reduce", value: 0.5, duration: 1 };
+          addLogMessage(`🛡️ ${p.name} kích hoạt Elven Reflex: Giảm 50% sát thương lượt này`, "defense");
+        }
+        else if (cardName === "Guard of the Ancient") {
+          p.shield = (p.shield || 0) + 300;
+          addLogMessage(`🛡️ ${p.name} nhận +300 Shield từ Guard of the Ancient`, "defense");
+        }
+        else if (cardName === "Blink Step") {
+          p.dodgeNext = true;
+          // Rút 1 lá
+          if (p.deckCount > 0) {
+            const newCard = generateCard(p.deck);
+            p.hand = [...p.hand, newCard];
+            p.deckCount--;
+            addLogMessage(`🌀 ${p.name} kích hoạt Blink Step: Né đòn + rút 1 lá`, "special");
+          }
+        }
+        else if (cardName === "Spirit Barrier") {
+          p.tempShield = { value: 400, duration: 1 };
+          addLogMessage(`🛡️ ${p.name} tạo Spirit Barrier: +400 Shield (mất ở đầu lượt kế)`, "defense");
+        }
+        
+        // 💫 HỖ TRỢ
+        else if (cardName === "Elven Grace") {
+          p.health = Math.min(2000, (p.health || 1000) + 200);
+          addLogMessage(`❤️ ${p.name} hồi 200 HP từ Elven Grace`, "heal");
+        }
+        else if (cardName === "Mana Surge") {
+          newMana = Math.min(5, newMana + 1);
+          addLogMessage(`🔮 ${p.name} nhận +1 Mana từ Mana Surge`, "mana");
+        }
+        else if (cardName === "Focus Mind") {
+          // Rút 2 lá
+          let drawCount = 0;
+          for (let i = 0; i < 2 && p.deckCount > 0; i++) {
+            const newCard = generateCard(p.deck);
+            p.hand = [...p.hand, newCard];
+            p.deckCount--;
+            drawCount++;
+          }
+          if (drawCount > 0) {
+            addLogMessage(`🎴 ${p.name} rút ${drawCount} lá từ Focus Mind`, "draw");
+          }
+        }
+        
+        // ⚡ ĐẶC BIỆT
+        else if (cardName === "Avatar") {
+          p.avatarActive = { 
+            active: true, 
+            duration: 2, 
+            defBonus: 0.6, // +60% DEF
+            immune: true, // Miễn khống chế
+            damagePerTurn: 100 // Mỗi lượt gây 100 dmg cho tất cả
+          };
+          addLogMessage(`⚡ ${p.name} kích hoạt AVATAR trong 2 lượt!`, "special");
+        }
+        else if (cardName === "Awakening: Eternity") {
+          if (p.avatarActive && p.avatarActive.active) {
+            p.avatarActive.maxDuration = (p.avatarActive.maxDuration || 2) + 1;
+            addLogMessage(`⚡ ${p.name} kéo dài Avatar thêm 1 lượt`, "special");
+          }
+        }
+        else if (cardName === "Glory of the Elves") {
+          p.doubleDamageNextTurn = true;
+          addLogMessage(`🌟 ${p.name} kích hoạt Glory of the Elves: Sát thương lượt kế x2!`, "special");
+        }
+        else if (cardName === "Last Stand") {
+          if (p.health <= 200) {
+            p.lastStandActive = true;
+            addLogMessage(`🛡️ ${p.name} kích hoạt Last Stand: Miễn sát thương + nhận 200 Shield`, "special");
+          }
+        }
+        
+        return {
+          ...p,
+          hand: newHand,
+          mana: newMana
+        };
+      }
+      
+      // Xử lý cho mục tiêu (nếu có)
+      if (toUid && p.uid === toUid) {
+        const cardName = cardInfo.originalCardName || cardInfo.name;
+        
+        // Xử lý damage
+        if (cardName === "Quick Slash") {
+          return applyDamage(p, 120, fromUid, players, cardName);
+        }
+        else if (cardName === "Twin Strike") {
+          // Twin Strike xử lý 2 mục tiêu - sẽ xử lý riêng
+          return applyDamage(p, 80, fromUid, players, cardName);
+        }
+        else if (cardName === "Elven Precision") {
+          let damage = 180;
+          if (p.health <= 300) damage += 50; // Bonus 50 dmg
+          return applyDamage(p, damage, fromUid, players, cardName);
+        }
+        else if (cardName === "Moonlight Pierce") {
+          // Xuyên khiên: bỏ qua shield
+          const damage = 150;
+          p.health = Math.max(0, (p.health || 1000) - damage);
+          
+          // Kiểm tra hạ mục tiêu
+          if (p.health <= 0) {
+            p.alive = false;
+            p.health = 0;
+            addLogMessage(`💀 ${p.name} bị hạ bởi Moonlight Pierce!`, "damage");
+          }
+          
+          return p;
+        }
+        else if (cardName === "Finishing Blow") {
+          const damage = 250;
+          const newHealth = Math.max(0, (p.health || 1000) - damage);
+          
+          // Kiểm tra nếu hạ mục tiêu
+          if (newHealth <= 0) {
+            p.health = 0;
+            p.alive = false;
+            addLogMessage(`💀 ${p.name} bị hạ bởi Finishing Blow!`, "damage");
+            
+            // Người đánh rút 1 lá
+            const fromPlayer = players.find(player => player.uid === fromUid);
+            if (fromPlayer && fromPlayer.deckCount > 0) {
+              fromPlayer.hand = [...fromPlayer.hand, generateCard(fromPlayer.deck)];
+              fromPlayer.deckCount--;
+              addLogMessage(`🎴 ${fromPlayer.name} rút 1 lá từ Finishing Blow`, "draw");
+            }
+          } else {
+            p.health = newHealth;
+          }
+          
+          return p;
+        }
+        else if (cardName === "Awakening: Blink of an Eye") {
+          return applyDamage(p, 150, fromUid, players, cardName);
+        }
+      }
+      
+      // Xử lý Arcane Sweep (damage tất cả người chơi khác)
+      if (cardInfo.name === "Arcane Sweep" && p.uid !== fromUid) {
+        return applyDamage(p, 120, fromUid, players, "Arcane Sweep");
+      }
+      
+      // Xử lý Avatar damage (mỗi lượt)
+      if (fromPlayer && fromPlayer.avatarActive && fromPlayer.avatarActive.active && 
+          p.uid !== fromUid && cardInfo.name === "Avatar") {
+        return applyDamage(p, 100, fromUid, players, "Avatar Aura");
+      }
+      
+      return p;
+    });
+    
+    // Xử lý Twin Strike riêng (cần 2 mục tiêu)
+    if (cardInfo.name === "Twin Strike") {
+      // Tìm mục tiêu thứ 2 (người chơi khác còn sống, không phải bản thân)
+      const alivePlayers = updatedPlayers.filter(p => p.alive && p.uid !== fromUid);
+      if (alivePlayers.length >= 2) {
+        const secondTarget = alivePlayers.find(p => p.uid !== toUid) || alivePlayers[0];
+        if (secondTarget) {
+          const secondIndex = updatedPlayers.findIndex(p => p.uid === secondTarget.uid);
+          if (secondIndex !== -1) {
+            updatedPlayers[secondIndex] = applyDamage(updatedPlayers[secondIndex], 80, fromUid, players, "Twin Strike");
+          }
+        }
+      }
+    }
+    
+    return updatedPlayers;
+  }
+  
+  // ==== PHẦN CŨ: Xử lý card thông thường ====
+  if (!fromPlayer || (toUid && !toPlayer)) return players;
   
   const updatedPlayers = players.map(p => {
     if (p.uid === fromUid) {
@@ -759,6 +1276,78 @@ function applyCardEffect(cardString, players, fromUid, toUid) {
   });
   
   return updatedPlayers;
+}
+
+// Hàm hỗ trợ áp dụng damage
+function applyDamage(player, damage, fromUid, players, cardName) {
+  let effectiveDamage = damage;
+  
+  // Kiểm tra Last Stand
+  if (player.lastStandActive) {
+    addLogMessage(`🛡️ ${player.name} miễn sát thương nhờ Last Stand!`, "defense");
+    player.shield = (player.shield || 0) + 200;
+    player.lastStandActive = false;
+    return player;
+  }
+  
+  // Kiểm tra Elven Reflex
+  if (player.defenseBuff && player.defenseBuff.type === "reduce") {
+    effectiveDamage = Math.floor(damage * player.defenseBuff.value);
+    addLogMessage(`🛡️ ${player.name} giảm ${damage - effectiveDamage} sát thương nhờ Elven Reflex`, "defense");
+  }
+  
+  // Kiểm tra Double Damage
+  const fromPlayer = players.find(p => p.uid === fromUid);
+  if (fromPlayer && fromPlayer.doubleDamageNextTurn) {
+    effectiveDamage *= 2;
+    addLogMessage(`⚡ ${fromPlayer.name} gây x2 sát thương nhờ Glory of the Elves!`, "special");
+  }
+  
+  // Áp dụng shield trước
+  if (player.shield && player.shield > 0) {
+    if (player.shield >= effectiveDamage) {
+      player.shield -= effectiveDamage;
+      addLogMessage(`🛡️ ${player.name} chặn ${effectiveDamage} damage bằng Shield`, "defense");
+      effectiveDamage = 0;
+    } else {
+      effectiveDamage -= player.shield;
+      addLogMessage(`🛡️ ${player.name} chặn ${player.shield} damage bằng Shield`, "defense");
+      player.shield = 0;
+    }
+  }
+  
+  // Áp dụng damage
+  const newHealth = Math.max(0, (player.health || 1000) - effectiveDamage);
+  
+  if (effectiveDamage > 0) {
+    addLogMessage(`⚔️ ${player.name} nhận ${effectiveDamage} damage từ ${cardName}`, "damage");
+  }
+  
+  player.health = newHealth;
+  
+  // Kiểm tra hạ mục tiêu
+  if (newHealth <= 0) {
+    player.alive = false;
+    player.health = 0;
+    addLogMessage(`💀 ${player.name} đã thua!`, "death");
+    
+    // Kiểm tra Blade Mastery (passive)
+    if (fromPlayer && fromPlayer.deck === "JOL – ELVEN PRINCE" && effectiveDamage >= 200) {
+      if (fromPlayer.deckCount > 0) {
+        fromPlayer.hand = [...fromPlayer.hand, generateCard(fromPlayer.deck)];
+        fromPlayer.deckCount--;
+        addLogMessage(`🎴 ${fromPlayer.name} rút 1 lá nhờ Blade Mastery`, "draw");
+      }
+    }
+    
+    // Kiểm tra Focused Guard (passive)
+    if (effectiveDamage >= 150 && player.deck === "JOL – ELVEN PRINCE") {
+      player.shield = (player.shield || 0) + 100;
+      addLogMessage(`🛡️ ${player.name} nhận +100 Shield nhờ Focused Guard`, "defense");
+    }
+  }
+  
+  return player;
 }
 
 // ========== XỬ LÝ LƯỢT CHƠI ==========
@@ -987,3 +1576,64 @@ async function exitBattle(roomId) {
   alert("Đã thoát khỏi trận đấu!");
   location.reload();
 }
+
+
+
+
+// Thêm đối tượng deck của JOL
+const JOL_ELVEN_DECK = {
+  name: "JOL – ELVEN PRINCE",
+  cards: {
+    // ⚔️ TẤN CÔNG – 28 lá
+    "Quick Slash": { type: "attack", mana: 1, effect: "damage", power: 120, target: "single" },
+    "Twin Strike": { type: "attack", mana: 2, effect: "damage", power: 80, target: "multiple", count: 2 },
+    "Elven Precision": { type: "attack", mana: 2, effect: "damage", power: 180, target: "single", bonus: 50 },
+    "Moonlight Pierce": { type: "attack", mana: 2, effect: "pierce", power: 150, target: "single" },
+    "Arcane Sweep": { type: "attack", mana: 3, effect: "damage", power: 120, target: "all_others" },
+    "Finishing Blow": { type: "attack", mana: 3, effect: "damage", power: 250, target: "single", drawOnKill: true },
+    
+    // 🛡️ PHÒNG THỦ – 12 lá
+    "Elven Reflex": { type: "defense", mana: 1, effect: "reduce", power: 0.5, target: "self" },
+    "Guard of the Ancient": { type: "defense", mana: 2, effect: "shield", power: 300, target: "self" },
+    "Blink Step": { type: "defense", mana: 1, effect: "dodge", power: 0, target: "self", draw: 1 },
+    "Spirit Barrier": { type: "defense", mana: 2, effect: "shield_temp", power: 400, target: "self" },
+    
+    // 💫 HỖ TRỢ – 8 lá
+    "Elven Grace": { type: "heal", mana: 1, effect: "heal", power: 200, target: "self" },
+    "Mana Surge": { type: "mana", mana: 0, effect: "mana", power: 1, target: "self", max: 5 },
+    "Focus Mind": { type: "draw", mana: 1, effect: "draw", power: 2, target: "self" },
+    
+    // ⚡ ĐẶC BIỆT / ULTIMATE – 12 lá
+    "Avatar": { type: "special", mana: 3, effect: "avatar", power: 100, target: "self", duration: 2 },
+    "Awakening: Eternity": { type: "special", mana: 1, effect: "extend_avatar", power: 1, target: "self", max: 4 },
+    "Awakening: Blink of an Eye": { type: "special", mana: 2, effect: "avatar_strike", power: 150, target: "single" },
+    "Glory of the Elves": { type: "special", mana: 3, effect: "double_damage", power: 0, target: "self" },
+    "Last Stand": { type: "special", mana: 2, effect: "last_stand", power: 200, target: "self" },
+    
+    // 🌟 BỊ ĐỘNG – 4 lá
+    "Battle Instinct": { type: "passive", mana: 0, effect: "start_draw", power: 1, target: "self" },
+    "Blade Mastery": { type: "passive", mana: 0, effect: "draw_on_damage", power: 1, target: "self", threshold: 200 },
+    "Focused Guard": { type: "passive", mana: 0, effect: "shield_on_damage", power: 100, target: "self", threshold: 150 },
+    "Calm Before Storm": { type: "passive", mana: 0, effect: "mana_on_skip", power: 1, target: "self" }
+  },
+  deckComposition: {
+    "Quick Slash": 6,
+    "Twin Strike": 4,
+    "Elven Precision": 4,
+    "Moonlight Pierce": 4,
+    "Arcane Sweep": 4,
+    "Finishing Blow": 6,
+    "Elven Reflex": 4,
+    "Guard of the Ancient": 4,
+    "Blink Step": 2,
+    "Spirit Barrier": 2,
+    "Elven Grace": 3,
+    "Mana Surge": 3,
+    "Focus Mind": 2,
+    "Avatar": 4,
+    "Awakening: Eternity": 2,
+    "Awakening: Blink of an Eye": 2,
+    "Glory of the Elves": 2,
+    "Last Stand": 2
+  }
+};
