@@ -862,4 +862,3 @@ export class EffectManager {
   }
 }
 
-

@@ -7,7 +7,7 @@ import {
   onSnapshot,
   updateDoc,
   arrayUnion,
-} from "./firebase.js";
+} from "../firebase.js";
 import { updateBattleHandLayout, handLayoutManager } from './hand-layout-manager.js';
 import { DeckManager } from '../deck-manager.js';
 import { Effect, EffectManager, EffectType, ModifierType } from './effect-system.js';
