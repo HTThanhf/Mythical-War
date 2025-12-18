@@ -863,4 +863,3 @@ export class EffectManager {
 }
 
 // ========== EXPORT ==========
-export { Effect, EffectManager, EffectType, ModifierType };
